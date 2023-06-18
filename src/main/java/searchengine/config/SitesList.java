@@ -12,5 +12,6 @@ import java.util.List;
 @Component
 @ConfigurationProperties(prefix = "indexing-settings")
 public class SitesList {
+    private String currentSite;
     private List<Site> sites;
 }
