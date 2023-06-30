@@ -24,8 +24,8 @@ import static java.lang.Thread.sleep;
 @RequiredArgsConstructor
 //@Repository
 public class SiteIndexingServiceImpl extends RecursiveAction implements SiteIndexingService {
-    static List<String> refsList = new ArrayList<>();
-    public static List<String> refstoFile = new ArrayList<>();
+    //static List<String> refsList = new ArrayList<>();
+    //public static List<String> refstoFile = new ArrayList<>();
     private final SitesList sites;
     @Autowired
     private final PageRepository pageRepository;
@@ -43,13 +43,6 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
     Lemma lemma = new Lemma();
     IndexS indexS = new IndexS();
 
-    //public SiteIndexingServiceImpl () {}
-    /*public SiteIndexingServiceImpl (SitesList sites) {
-        this.siteAddress = siteAddress;
-        page = new Page();
-        sites = new SitesList();
-    }
-*/
     public void StartIndexing(){
         ForkJoinPool pool = new ForkJoinPool();
         //SitesList sites = new SitesList();
@@ -72,7 +65,6 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
             site.setName(i.getName());
             site.setStatus(Status.INDEXING);
             site.setLastError(null);
-            //Date date = new Date();
             site.setStatusTime(Date.valueOf(LocalDate.now()));
             siteRepository.save(site);
             SiteIndexingServiceImpl index = new SiteIndexingServiceImpl(sites, pageRepository, siteRepository,lemmaRepository,indexRepository);
@@ -82,51 +74,39 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
             index.page.setSiteId(site.getId());
             index.page.setPath(index.siteAddress);
             index.compute();
-            index.refstoFile.add(i.getUrl());
+            //index.refstoFile.add(i.getUrl());
             pool.invoke(index);
         }
     }
     @Override
     public String getIndex(){
         StartIndexing();
-        //System.out.println("ok");
         return "ok";
     };
     @Override
     public void compute() {
-        //Connection con = null;
-        //Statement stmt = null;
-        //ResultSet rs = null;
-        //Page page = new Page();
         String domenName = getDomenName(siteAddress);
-        //System.out.println(siteToIndex);
         String givenDomen = getDomenName(siteToIndex);
         if (!(domenName.equals(givenDomen))){return;}
         Document doc = loadPage(siteAddress);
         if (Objects.isNull(doc)){return;}
-        System.out.println(Jsoup.parse(doc.toString()).text());
-        try {
-            words = Lemmatizator.getWordsCount(Jsoup.parse(doc.toString()).text());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        //try {
-            //con = DriverManager.getConnection("jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true", "root", "115151Jj***");
-            //stmt = con.createStatement();
-        page.setCode(doc.connection().response().statusCode());
-        //String strContent = doc.toString().replaceAll("'","");
-        //strContent = strContent.replaceAll("\\xF0\\x9F\\x98\\x83","");
-        page.setContent(doc.toString());
-        pageRepository.save(page);
-        for (Map.Entry entry : words.entrySet()) {
+        List <Page> addedPages = pageRepository.getByPath(siteAddress);
+        if (addedPages.size() == 0) {
+            try {
+                words = Lemmatizator.getWordsCount(Jsoup.parse(doc.toString()).text());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            page.setCode(doc.connection().response().statusCode());
+            page.setContent(doc.toString());
+            pageRepository.save(page);
+            for (Map.Entry entry : words.entrySet()) {
                 Lemma lemma = new Lemma();
                 String k = (String) entry.getKey();
                 Integer v = (Integer) entry.getValue();
                 System.out.println(k + " " + v);
-                //String query = "select * from lemma where lemma = ".concat(k);
-                //rs = stmt.executeQuery(query);
                 List<Lemma> lemmas = lemmaRepository.findByLemma(k);
-                if (lemmas.size() == 0){
+                if (lemmas.size() == 0) {
                     lemma.setLemma(k);
                     lemma.setFrequency(1);
                     List<Site> sites = siteRepository.findByUrl(siteToIndex);
@@ -142,20 +122,13 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
                 lemmas = lemmaRepository.findByLemma(k);
                 lemma = lemmas.get(0);
                 indexS.setLemmaId(lemma.getId());
-                List <Page> pages = pageRepository.getByPath(siteAddress);
+                List<Page> pages = pageRepository.getByPath(siteAddress);
                 System.out.println(siteAddress);
                 Page curPage = pages.get(0);
                 indexS.setPageId(curPage.getId());
                 indexRepository.save(indexS);
             }
-        //} catch (SQLException e) {
-            //throw new RuntimeException(e);
-        //} finally {
-            //try { con.close(); } catch(SQLException se) {}
-            //try { stmt.close(); } catch(SQLException se) {}
-            //try { rs.close(); } catch(SQLException se){}
-        //}
-
+        }
         Elements refs = doc.select("a");
         for (Element line : refs) {
             String s = line.attr("href");
@@ -183,7 +156,7 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
             }
             if (s.length() > 2) {
                 List <Page> pages = pageRepository.getByPath(s);
-                if (pages.size() > 0) { //  && refstoFile.size() < 90
+                if (pages.size() == 0) { //  && refstoFile.size() < 90
                     System.out.println(s);
                     SitesList sl = new SitesList();
                     sl.setCurrentSite(s);
@@ -208,11 +181,9 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
         int slashCount = siteAddress.length() - siteAddress.replace("/", "").length();
         String sToFile = str.repeat(slashCount - 2).concat(siteAddress);
         //refstoFile.add(sToFile);
-        //System.out.println(sToFile);
-
     }
 
-    private Document loadPage(String siteAddress) {
+    public static Document loadPage(String siteAddress) {
         try {
             sleep(150);
             return Jsoup.connect(siteAddress).get();

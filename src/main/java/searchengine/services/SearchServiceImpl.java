@@ -1,6 +1,8 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 import searchengine.model.*;
 
@@ -17,6 +19,7 @@ public class SearchServiceImpl implements SearchService {
     private final IndexRepository indexRepository;
 
     List <PageResult> searchResultSet = new ArrayList<>();
+    String keyWord = "";
 
     @Override
     public String getSearch(String textToSearch) {
@@ -52,9 +55,14 @@ public class SearchServiceImpl implements SearchService {
                                 LinkedHashMap::new));
         sortedWords.entrySet().forEach(System.out::println);
         List<String> foundPages = new ArrayList<>();
+        boolean keyWordFound = false;
         for (Map.Entry<String, Integer> entry : sortedWords.entrySet()) {
             if (entry.getValue() == 0) {
                 continue;
+            }
+            if (entry.getValue() > 0 && !keyWordFound){
+                keyWord = entry.getKey();
+                keyWordFound = !keyWordFound;
             }
             List<Lemma> lemmas = lemmaRepository.findByLemma(entry.getKey());
             Lemma lemma = lemmas.get(0);
@@ -90,6 +98,18 @@ public class SearchServiceImpl implements SearchService {
             PageResult pageResult = new PageResult();
             pageResult.setUri(foundPages.get(i));
             pageResult.setSnippet(page.getContent());
+            Document doc = Jsoup.parse(pageResult.getSnippet()); // SiteIndexingServiceImpl.loadPage(pageResult.getUri());
+            pageResult.setSnippet(doc.text());
+            pageResult.setTitle(doc.title());
+            System.out.println(pageResult.getSnippet());
+            int snippetStart = pageResult.getSnippet().indexOf(keyWord);
+            String snippetTextBefore = snippetStart>50 ? pageResult.getSnippet().substring(snippetStart-50, snippetStart)
+                    : pageResult.getSnippet().substring(0, snippetStart);
+            String snippetTextAfter = (pageResult.getSnippet().length() - (snippetStart + keyWord.length()))>50
+                    ? pageResult.getSnippet().substring(snippetStart + keyWord.length(), snippetStart+50)
+                    : pageResult.getSnippet().substring(snippetStart + keyWord.length(), pageResult.getSnippet().length()-1);
+            pageResult.setSnippet(snippetTextBefore.concat("<b>".concat(keyWord).concat("</b>").concat(snippetTextAfter)));
+
             List<IndexS> indeces = indexRepository.findByPageId(page.getId());
             float rankSum = 0;
             for (IndexS indexS : indeces){
@@ -104,8 +124,21 @@ public class SearchServiceImpl implements SearchService {
                 maxRank = pageResult.getRelevance();
             }
         }
-        
-        //System.out.println("here");
+        for (PageResult pageResult : searchResultSet){
+            pageResult.setRelevance(pageResult.getRelevance()/maxRank);
+        }
+        searchResultSet.sort(new Comparator<PageResult>() {
+            @Override
+            public int compare(PageResult o1, PageResult o2) {
+                return 0;
+            }
+        });
+        for (PageResult pageResult : searchResultSet){
+            System.out.println(pageResult.getUri() + " " + pageResult.getRelevance());
+            System.out.println(pageResult.getTitle());
+            System.out.println(pageResult.getSnippet());
+        }
+
         return "ok";
     }
 }
