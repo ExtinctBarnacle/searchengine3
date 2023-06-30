@@ -1,6 +1,7 @@
 package searchengine.model;
 
 import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import javax.persistence.*;
 //import javax.validation.constraints.NotNull;
@@ -9,6 +10,7 @@ import java.util.Objects;
 
 @Entity(name = "site")
 @NoArgsConstructor
+@Component
 public class Site {
     public int getId() {
         return id;
@@ -77,6 +79,7 @@ public class Site {
    // NOT NULL AUTO_INCREMENT
     int id;
     @Column(columnDefinition = "ENUM('INDEXING', 'INDEXED')")
+    @Enumerated(EnumType.STRING)
     //@NotNull
     Status status;
 

@@ -1,14 +1,15 @@
-/*
 package searchengine.model;
 
 import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+//import javax.validation.constraints.NotNull;
 import java.util.Objects;
 
 @Entity(name = "lemma")
 @NoArgsConstructor
+@Component
 public class Lemma {
     public int getId() {
         return id;
@@ -57,17 +58,17 @@ public class Lemma {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @NotNull
+    //@NotNull
     @Column(name = "id")
     int id;
-    @NotNull
+    //@NotNull
     @Column(name = "site_id")
     int siteId;
-    @NotNull
+    //@NotNull
     @Column(name = "lemma", columnDefinition = "VARCHAR(255)",nullable = false, unique = true)
     String lemma;
     @Column(name = "frequency")
-    @NotNull
+    //@NotNull
     int frequency;
 }
-*/
+

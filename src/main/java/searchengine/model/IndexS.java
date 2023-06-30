@@ -1,24 +1,26 @@
-/*
 package searchengine.model;
 
 import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+//import javax.validation.constraints.NotNull;
 import java.util.Objects;
 
-@Entity
-public class Index {
+@Entity (name = "index_s")
+@NoArgsConstructor
+@Component
+public class IndexS {
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Index index = (Index) o;
-        return id == index.id && pageId == index.pageId && lemmaId == index.lemmaId && Float.compare(index.rank, rank) == 0;
+        IndexS indexS = (IndexS) o;
+        return id == indexS.id && pageId == indexS.pageId && lemmaId == indexS.lemmaId && Float.compare(indexS.rankS, rankS) == 0;
     }
     @Override
     public int hashCode() {
-        return Objects.hash(id, pageId, lemmaId, rank);
+        return Objects.hash(id, pageId, lemmaId, rankS);
     }
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
@@ -27,7 +29,7 @@ public class Index {
     int pageId;
     @Column(name = "lemma_id")
     int lemmaId;
-    float rank;
+    float rankS;
 
     public int getId() {
         return id;
@@ -48,9 +50,9 @@ public class Index {
         this.lemmaId = lemmaId;
     }
     public float getRank() {
-        return rank;
+        return rankS;
     }
-    public void setRank(float rank) {
-        this.rank = rank;
+    public void setRank(float rankS) {
+        this.rankS = rankS;
     }
-}*/
+}

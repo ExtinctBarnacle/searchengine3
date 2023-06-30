@@ -1,6 +1,7 @@
 package searchengine.model;
 
 import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import javax.persistence.*;
 //import javax.validation.constraints.NotNull;
@@ -8,7 +9,19 @@ import java.util.Objects;
 
 @Entity(name = "page")
 @NoArgsConstructor
-public class Page {
+@Component
+public class Page  {
+
+    /*@Override
+    public <S extends Page> S save(S entity) {
+        return null;
+    }
+
+    @Override
+    public <S extends Page> Iterable<S> saveAll(Iterable<S> entities) {
+        return null;
+    }*/
+
     public int getId() {
         return id;
     }
@@ -80,6 +93,6 @@ public class Page {
     int code;
 
     //@NotNull
-    @Column(name = "content",columnDefinition = "MEDIUMTEXT")
+    @Column(columnDefinition = "MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
     String content;
 }
