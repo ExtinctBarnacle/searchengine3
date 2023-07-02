@@ -18,7 +18,7 @@ public class SearchServiceImpl implements SearchService {
     private final PageRepository pageRepository;
     private final IndexRepository indexRepository;
 
-    List <PageResult> searchResultSet = new ArrayList<>();
+    List<PageResult> searchResultSet = new ArrayList<>();
     String keyWord = "";
 
     @Override
@@ -37,7 +37,7 @@ public class SearchServiceImpl implements SearchService {
                 continue;
             }
             Lemma lemma = lemmas.get(0);
-            if (lemma.getFrequency() > 10) {
+            if (lemma.getFrequency() > 100) {
                 //words.remove(entry.getKey());
                 words.put(entry.getKey(), 0);
             } else {
@@ -60,7 +60,7 @@ public class SearchServiceImpl implements SearchService {
             if (entry.getValue() == 0) {
                 continue;
             }
-            if (entry.getValue() > 0 && !keyWordFound){
+            if (entry.getValue() > 0 && !keyWordFound) {
                 keyWord = entry.getKey();
                 keyWordFound = !keyWordFound;
             }
@@ -87,12 +87,12 @@ public class SearchServiceImpl implements SearchService {
                 System.out.println(entry.getKey() + " " + page.getPath());
             }
         }
-        if (foundPages.size() == 0){
+        if (foundPages.size() == 0) {
             System.out.println("Nothing found");
         } else {
-            foundPages.forEach(System.out::println);
+            //foundPages.forEach(System.out::println);
         }
-        for (int i = 0; i < foundPages.size(); i++){
+        for (int i = 0; i < foundPages.size(); i++) {
             List<Page> pages = pageRepository.getByPath(foundPages.get(i));
             Page page = pages.get(0);
             PageResult pageResult = new PageResult();
@@ -101,31 +101,34 @@ public class SearchServiceImpl implements SearchService {
             Document doc = Jsoup.parse(pageResult.getSnippet()); // SiteIndexingServiceImpl.loadPage(pageResult.getUri());
             pageResult.setSnippet(doc.text());
             pageResult.setTitle(doc.title());
-            System.out.println(pageResult.getSnippet());
-            int snippetStart = pageResult.getSnippet().indexOf(keyWord);
-            String snippetTextBefore = snippetStart>50 ? pageResult.getSnippet().substring(snippetStart-50, snippetStart)
-                    : pageResult.getSnippet().substring(0, snippetStart);
-            String snippetTextAfter = (pageResult.getSnippet().length() - (snippetStart + keyWord.length()))>50
-                    ? pageResult.getSnippet().substring(snippetStart + keyWord.length(), snippetStart+50)
-                    : pageResult.getSnippet().substring(snippetStart + keyWord.length(), pageResult.getSnippet().length()-1);
-            pageResult.setSnippet(snippetTextBefore.concat("<b>".concat(keyWord).concat("</b>").concat(snippetTextAfter)));
-
+            //System.out.println(pageResult.getSnippet());
+            pageResult.setSnippet(pageResult.getSnippet().replaceAll(keyWord,"<b>".concat(keyWord).concat("</b>")));
+            int keyWordStart = pageResult.getSnippet().indexOf(keyWord);
+            int snippetStart = keyWordStart > 50 ? keyWordStart - 50 : 0;
+            int snippetEnd = pageResult.getSnippet().length() - (keyWordStart + keyWord.length()) > 50 ? keyWordStart + 50 : pageResult.getSnippet().length() - 1;
+            pageResult.setSnippet(pageResult.getSnippet().substring(snippetStart, snippetEnd));
+            //           String snippetTextBefore = snippetStart > 50 ? pageResult.getSnippet().substring(snippetStart - 50, snippetStart)
+                //                    : pageResult.getSnippet().substring(0, snippetStart);
+//            String snippetTextAfter = (pageResult.getSnippet().length() - (snippetStart + keyWord.length()))>50
+//                    ? pageResult.getSnippet().substring(snippetStart + keyWord.length(), snippetStart+50)
+//                    : pageResult.getSnippet().substring(snippetStart + keyWord.length(), pageResult.getSnippet().length()-1);
+//            pageResult.setSnippet(snippetTextBefore.concat("<b>".concat(keyWord).concat("</b>").concat(snippetTextAfter)));
             List<IndexS> indeces = indexRepository.findByPageId(page.getId());
             float rankSum = 0;
-            for (IndexS indexS : indeces){
+            for (IndexS indexS : indeces) {
                 rankSum = rankSum + indexS.getRank();
             }
             pageResult.setRelevance(rankSum);
             searchResultSet.add(pageResult);
         }
         float maxRank = 0;
-        for (PageResult pageResult : searchResultSet){
-            if (pageResult.getRelevance() > maxRank){
+        for (PageResult pageResult : searchResultSet) {
+            if (pageResult.getRelevance() > maxRank) {
                 maxRank = pageResult.getRelevance();
             }
         }
-        for (PageResult pageResult : searchResultSet){
-            pageResult.setRelevance(pageResult.getRelevance()/maxRank);
+        for (PageResult pageResult : searchResultSet) {
+            pageResult.setRelevance(pageResult.getRelevance() / maxRank);
         }
         searchResultSet.sort(new Comparator<PageResult>() {
             @Override
@@ -133,7 +136,7 @@ public class SearchServiceImpl implements SearchService {
                 return 0;
             }
         });
-        for (PageResult pageResult : searchResultSet){
+        for (PageResult pageResult : searchResultSet) {
             System.out.println(pageResult.getUri() + " " + pageResult.getRelevance());
             System.out.println(pageResult.getTitle());
             System.out.println(pageResult.getSnippet());
