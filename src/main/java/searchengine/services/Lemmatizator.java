@@ -31,7 +31,7 @@ public class Lemmatizator {
         clearedText = clearedText.replaceAll("\\)", " ");
         clearedText = clearedText.replaceAll("[a-zA-Z]", " ");
         clearedText = clearedText.toLowerCase();
-        System.out.println(clearedText);
+        //System.out.println(clearedText);
         String textArray[] = clearedText.split(" ");
         for (String i : textArray) {
             System.out.println(i);

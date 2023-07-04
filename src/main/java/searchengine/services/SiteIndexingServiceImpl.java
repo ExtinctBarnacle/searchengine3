@@ -43,6 +43,14 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
     Lemma lemma = new Lemma();
     IndexS indexS = new IndexS();
 
+    @Override
+    public String StopIndexing(){
+
+        site.setStatus(Status.FAILED);
+        site.setLastError("Индексация остановлена пользователем");
+        siteRepository.save(site);
+        return "ok";
+    }
     public void StartIndexing(){
         ForkJoinPool pool = new ForkJoinPool();
         //SitesList sites = new SitesList();
@@ -72,10 +80,13 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
             index.siteToIndex = i.getUrl();
             index.page = new Page();
             index.page.setSiteId(site.getId());
-            index.page.setPath(index.siteAddress);
+            String relativePath = index.siteAddress.substring(index.siteToIndex.length(),index.siteAddress.length());
+            index.page.setPath(relativePath);
             index.compute();
             //index.refstoFile.add(i.getUrl());
             pool.invoke(index);
+            site.setStatus(Status.INDEXED);
+             siteRepository.save(site);
         }
     }
     @Override
@@ -104,7 +115,7 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
                 Lemma lemma = new Lemma();
                 String k = (String) entry.getKey();
                 Integer v = (Integer) entry.getValue();
-                System.out.println(k + " " + v);
+                //System.out.println(k + " " + v);
                 List<Lemma> lemmas = lemmaRepository.findByLemma(k);
                 if (lemmas.size() == 0) {
                     lemma.setLemma(k);
@@ -123,7 +134,7 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
                 lemma = lemmas.get(0);
                 indexS.setLemmaId(lemma.getId());
                 List<Page> pages = pageRepository.getByPath(siteAddress);
-                System.out.println(siteAddress);
+                //System.out.println(siteAddress);
                 Page curPage = pages.get(0);
                 indexS.setPageId(curPage.getId());
                 indexRepository.save(indexS);
@@ -131,6 +142,8 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
         }
         Elements refs = doc.select("a");
         for (Element line : refs) {
+            site.setStatusTime(Date.valueOf(LocalDate.now()));
+            siteRepository.save(site);
             String s = line.attr("href");
             String upperDomen = getDomenName(s);
             if (s.length() < 3) {
@@ -162,7 +175,8 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
                     sl.setCurrentSite(s);
                     SiteIndexingServiceImpl loader = new SiteIndexingServiceImpl(sl,pageRepository, siteRepository,lemmaRepository,indexRepository);
                     loader.page = new Page();
-                    loader.page.setPath(s);
+                    String relativePath = s.substring(siteToIndex.length(),s.length());
+                    loader.page.setPath(relativePath);
                     List <Site> curSites = siteRepository.findByUrl(siteToIndex);
                     Site curSite = curSites.get(0);
                     loader.page.setSiteId(curSite.getId());
@@ -193,7 +207,7 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
         }
     }
 
-    private String getDomenName(String siteAddress) {
+    public String getDomenName(String siteAddress) {
         //System.out.println(siteAddress);
         if (siteAddress.length() < 3) {
             return "";

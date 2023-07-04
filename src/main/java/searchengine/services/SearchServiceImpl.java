@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
+import searchengine.dto.PageResult;
+import searchengine.dto.PagesResponse;
 import searchengine.model.*;
 
 import java.io.IOException;
@@ -17,12 +19,13 @@ public class SearchServiceImpl implements SearchService {
     private final LemmaRepository lemmaRepository;
     private final PageRepository pageRepository;
     private final IndexRepository indexRepository;
+    private final SiteRepository siteRepository;
 
     List<PageResult> searchResultSet = new ArrayList<>();
     String keyWord = "";
 
     @Override
-    public String getSearch(String textToSearch) {
+    public PagesResponse getSearch(String textToSearch) {
         try {
             words = Lemmatizator.getWordsCount(textToSearch);
         } catch (IOException e) {
@@ -42,7 +45,7 @@ public class SearchServiceImpl implements SearchService {
                 words.put(entry.getKey(), 0);
             } else {
                 words.put(entry.getKey(), lemma.getFrequency());
-                System.out.println("Key: " + entry.getKey() + ", Value: " + entry.getValue());
+
             }
         }
         Map<String, Integer> sortedWords = words.entrySet()
@@ -57,6 +60,7 @@ public class SearchServiceImpl implements SearchService {
         List<String> foundPages = new ArrayList<>();
         boolean keyWordFound = false;
         for (Map.Entry<String, Integer> entry : sortedWords.entrySet()) {
+            System.out.println("Key: " + entry.getKey() + ", Value: " + entry.getValue());
             if (entry.getValue() == 0) {
                 continue;
             }
@@ -82,37 +86,41 @@ public class SearchServiceImpl implements SearchService {
                 if (!pageContainsLemma) {
                     foundPages.remove(page.getPath());
                 }
-
                 foundPages.add(page.getPath());
-                System.out.println(entry.getKey() + " " + page.getPath());
+                //System.out.println(entry.getKey() + " " + page.getPath());
             }
         }
         if (foundPages.size() == 0) {
             System.out.println("Nothing found");
-        } else {
-            //foundPages.forEach(System.out::println);
         }
         for (int i = 0; i < foundPages.size(); i++) {
             List<Page> pages = pageRepository.getByPath(foundPages.get(i));
             Page page = pages.get(0);
             PageResult pageResult = new PageResult();
+            //SiteIndexingServiceImpl a = new SiteIndexingServiceImpl();
+            int start = foundPages.get(i).indexOf("//") + 2;
+            int end = foundPages.get(i).indexOf("/", start);
+            if (end == -1) {end = foundPages.get(i).length();}
+            pageResult.setSite(foundPages.get(i).substring(0, end));
+            //System.out.println(i);
+            String ss = foundPages.get(i);
+            List<Site> sites = siteRepository.findByUrl(pageResult.getSite());
+            Site site = sites.get(0);
+            pageResult.setSiteName(site.getName());
             pageResult.setUri(foundPages.get(i));
             pageResult.setSnippet(page.getContent());
             Document doc = Jsoup.parse(pageResult.getSnippet()); // SiteIndexingServiceImpl.loadPage(pageResult.getUri());
             pageResult.setSnippet(doc.text());
             pageResult.setTitle(doc.title());
-            //System.out.println(pageResult.getSnippet());
-            pageResult.setSnippet(pageResult.getSnippet().replaceAll(keyWord,"<b>".concat(keyWord).concat("</b>")));
-            int keyWordStart = pageResult.getSnippet().indexOf(keyWord);
-            int snippetStart = keyWordStart > 50 ? keyWordStart - 50 : 0;
-            int snippetEnd = pageResult.getSnippet().length() - (keyWordStart + keyWord.length()) > 50 ? keyWordStart + 50 : pageResult.getSnippet().length() - 1;
+            for (Map.Entry<String, Integer> entry : sortedWords.entrySet()) {
+                keyWord = entry.getKey();
+                pageResult.setSnippet(pageResult.getSnippet().replaceAll(keyWord, "<b>".concat(keyWord).concat("</b>")));
+            }
+            int keyWordStart = pageResult.getSnippet().indexOf("<b>");
+            int snippetStart = keyWordStart > 150 ? keyWordStart - 150 : 0;
+            int snippetEnd = (pageResult.getSnippet().length() - (keyWordStart + 3)) > 150 ? keyWordStart + 150 : pageResult.getSnippet().length() - 1;
             pageResult.setSnippet(pageResult.getSnippet().substring(snippetStart, snippetEnd));
-            //           String snippetTextBefore = snippetStart > 50 ? pageResult.getSnippet().substring(snippetStart - 50, snippetStart)
-                //                    : pageResult.getSnippet().substring(0, snippetStart);
-//            String snippetTextAfter = (pageResult.getSnippet().length() - (snippetStart + keyWord.length()))>50
-//                    ? pageResult.getSnippet().substring(snippetStart + keyWord.length(), snippetStart+50)
-//                    : pageResult.getSnippet().substring(snippetStart + keyWord.length(), pageResult.getSnippet().length()-1);
-//            pageResult.setSnippet(snippetTextBefore.concat("<b>".concat(keyWord).concat("</b>").concat(snippetTextAfter)));
+
             List<IndexS> indeces = indexRepository.findByPageId(page.getId());
             float rankSum = 0;
             for (IndexS indexS : indeces) {
@@ -130,18 +138,14 @@ public class SearchServiceImpl implements SearchService {
         for (PageResult pageResult : searchResultSet) {
             pageResult.setRelevance(pageResult.getRelevance() / maxRank);
         }
-        searchResultSet.sort(new Comparator<PageResult>() {
-            @Override
-            public int compare(PageResult o1, PageResult o2) {
-                return 0;
-            }
-        });
-        for (PageResult pageResult : searchResultSet) {
-            System.out.println(pageResult.getUri() + " " + pageResult.getRelevance());
-            System.out.println(pageResult.getTitle());
-            System.out.println(pageResult.getSnippet());
-        }
+        Collections.sort(searchResultSet, Comparator.reverseOrder());
 
-        return "ok";
+        for (PageResult pageResult : searchResultSet) {
+        }
+        PagesResponse pagesResponse = new PagesResponse();
+        pagesResponse.setData(searchResultSet);
+        pagesResponse.setResult(true);
+        pagesResponse.setCount(searchResultSet.size());
+        return pagesResponse;
     }
 }
