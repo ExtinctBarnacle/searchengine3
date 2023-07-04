@@ -7,6 +7,10 @@ import org.springframework.stereotype.Service;
 import searchengine.dto.PageResult;
 import searchengine.dto.PagesResponse;
 import searchengine.model.*;
+import searchengine.repository.IndexRepository;
+import searchengine.repository.LemmaRepository;
+import searchengine.repository.PageRepository;
+import searchengine.repository.SiteRepository;
 
 import java.io.IOException;
 import java.util.*;
@@ -102,9 +106,7 @@ public class SearchServiceImpl implements SearchService {
             int end = foundPages.get(i).indexOf("/", start);
             if (end == -1) {end = foundPages.get(i).length();}
             pageResult.setSite(foundPages.get(i).substring(0, end));
-            //System.out.println(i);
-            String ss = foundPages.get(i);
-            List<Site> sites = siteRepository.findByUrl(pageResult.getSite());
+            List<Site> sites = siteRepository.findByUrl(pageResult.getSite()+"/");
             Site site = sites.get(0);
             pageResult.setSiteName(site.getName());
             pageResult.setUri(foundPages.get(i));

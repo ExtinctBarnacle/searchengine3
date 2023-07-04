@@ -81,7 +81,7 @@ public class Page  {
     int id;
     //@NotNull
     //@EmbeddedId
-    @Column(name = "status_id")
+    @Column(name = "site_id")
     int siteId;
 
     //@NotNull

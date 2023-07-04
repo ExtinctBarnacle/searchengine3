@@ -1,6 +1,9 @@
 package searchengine.services;
 
+import searchengine.dto.Response;
+
 public interface SiteIndexingService {
-    String getIndex();
-    String StopIndexing();
+    Response getIndex();
+    Response StopIndexing();
+    Response indexPage (String url);
 }
