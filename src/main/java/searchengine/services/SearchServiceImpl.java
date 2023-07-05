@@ -35,7 +35,6 @@ public class SearchServiceImpl implements SearchService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
         for (Map.Entry<String, Integer> entry : words.entrySet()) {
             List<Lemma> lemmas = lemmaRepository.findByLemma(entry.getKey());
             if (lemmas.size() == 0) {
@@ -60,11 +59,11 @@ public class SearchServiceImpl implements SearchService {
                                 Map.Entry::getValue,
                                 (e1, e2) -> e1,
                                 LinkedHashMap::new));
-        sortedWords.entrySet().forEach(System.out::println);
+        //sortedWords.entrySet().forEach(System.out::println);
         List<String> foundPages = new ArrayList<>();
         boolean keyWordFound = false;
         for (Map.Entry<String, Integer> entry : sortedWords.entrySet()) {
-            System.out.println("Key: " + entry.getKey() + ", Value: " + entry.getValue());
+            //System.out.println("Key: " + entry.getKey() + ", Value: " + entry.getValue());
             if (entry.getValue() == 0) {
                 continue;
             }
@@ -102,14 +101,18 @@ public class SearchServiceImpl implements SearchService {
             Page page = pages.get(0);
             PageResult pageResult = new PageResult();
             //SiteIndexingServiceImpl a = new SiteIndexingServiceImpl();
-            int start = foundPages.get(i).indexOf("//") + 2;
-            int end = foundPages.get(i).indexOf("/", start);
-            if (end == -1) {end = foundPages.get(i).length();}
-            pageResult.setSite(foundPages.get(i).substring(0, end));
-            List<Site> sites = siteRepository.findByUrl(pageResult.getSite()+"/");
+            //int start = foundPages.get(i).indexOf("//") + 2;
+            //int end = foundPages.get(i).indexOf("/", start);
+            //if (end == -1) {end = foundPages.get(i).length();}
+            //pageResult.setSite(foundPages.get(i).substring(0, end));
+            List<Site> sites = siteRepository.findById(page.getSiteId());
             Site site = sites.get(0);
+            pageResult.setSite(site.getUrl());
             pageResult.setSiteName(site.getName());
             pageResult.setUri(foundPages.get(i));
+            if (pageResult.getUri().equals(pageResult.getSite())) {
+                pageResult.setUri("");
+            }
             pageResult.setSnippet(page.getContent());
             Document doc = Jsoup.parse(pageResult.getSnippet()); // SiteIndexingServiceImpl.loadPage(pageResult.getUri());
             pageResult.setSnippet(doc.text());
@@ -122,7 +125,6 @@ public class SearchServiceImpl implements SearchService {
             int snippetStart = keyWordStart > 150 ? keyWordStart - 150 : 0;
             int snippetEnd = (pageResult.getSnippet().length() - (keyWordStart + 3)) > 150 ? keyWordStart + 150 : pageResult.getSnippet().length() - 1;
             pageResult.setSnippet(pageResult.getSnippet().substring(snippetStart, snippetEnd));
-
             List<IndexS> indeces = indexRepository.findByPageId(page.getId());
             float rankSum = 0;
             for (IndexS indexS : indeces) {

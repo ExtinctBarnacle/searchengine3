@@ -62,7 +62,8 @@ public class Lemma {
     @Column(name = "id")
     int id;
     //@NotNull
-    @Column(name = "site_id")
+    //@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "site_id", referencedColumnName = "id")
     int siteId;
     //@NotNull
     @Column(name = "lemma", columnDefinition = "VARCHAR(255)",nullable = false, unique = true)

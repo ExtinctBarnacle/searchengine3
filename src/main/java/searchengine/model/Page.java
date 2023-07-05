@@ -1,26 +1,17 @@
 package searchengine.model;
 
+import com.sun.istack.NotNull;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.*;
-//import javax.validation.constraints.NotNull;
 import java.util.Objects;
 
 @Entity(name = "page")
+//@Table(name = "page", indexes = {@Index(name = "path", columnList = "path, site_id", unique = true)})
 @NoArgsConstructor
 @Component
 public class Page  {
-
-    /*@Override
-    public <S extends Page> S save(S entity) {
-        return null;
-    }
-
-    @Override
-    public <S extends Page> Iterable<S> saveAll(Iterable<S> entities) {
-        return null;
-    }*/
 
     public int getId() {
         return id;
@@ -75,24 +66,23 @@ public class Page  {
         return Objects.hash(id, siteId, path, code, content);
     }
 
-    //@NotNull
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
-    //@NotNull
-    //@EmbeddedId
+    //@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false, name = "site_id", referencedColumnName = "id")
+    @NotNull
     @Column(name = "site_id")
+    //@Column(name = "site_id")
     int siteId;
 
-    //@NotNull
-    @Column(name = "path",columnDefinition = "TEXT")
+    @Column(length = 1000, columnDefinition = "VARCHAR(515)", nullable = false)
     String path;
 
-    //@NotNull
     @Column(name = "code")
     int code;
 
-    //@NotNull
-    @Column(columnDefinition = "MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+    @Column(length = 16777215, columnDefinition = "mediumtext")
+    //@Column(columnDefinition = "MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
     String content;
 }

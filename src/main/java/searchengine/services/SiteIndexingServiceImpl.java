@@ -20,6 +20,7 @@ import searchengine.repository.SiteRepository;
 import java.io.IOException;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
@@ -115,6 +116,9 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
             index.page = new Page();
             index.page.setSiteId(site.getId());
             String relativePath = index.siteAddress.substring(index.siteToIndex.length(), index.siteAddress.length());
+            if (relativePath.equals("")){
+                relativePath = siteToIndex;
+            }
             index.page.setPath(relativePath);
             index.compute();
             //index.refstoFile.add(i.getUrl());
@@ -227,7 +231,7 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
                 continue;
             }
             if (s.length() > 2) {
-                List<Page> pages = pageRepository.getByPath(siteToIndex + s);
+                List<Page> pages = pageRepository.getByPath(s.substring(siteToIndex.length(), s.length()));
                 if (pages.size() == 0) { //  && refstoFile.size() < 90
                     //System.out.println(s);
                     SitesList sl = new SitesList();
@@ -240,20 +244,12 @@ public class SiteIndexingServiceImpl extends RecursiveAction implements SiteInde
                     Site curSite = curSites.get(0);
                     loader.page.setSiteId(curSite.getId());
                     loader.siteAddress = s;
-                    //addPage(s);
                     loader.fork();
                     loader.join();
                 }
             }
         }
     }
-    /*private void addPage(String siteAddress) {
-        //refsList.add(siteAddress);
-        String str = "    ";
-        int slashCount = siteAddress.length() - siteAddress.replace("/", "").length();
-        String sToFile = str.repeat(slashCount - 2).concat(siteAddress);
-        //refstoFile.add(sToFile);
-    }*/
 
     public static Document loadPage(String siteAddress) {
         try {

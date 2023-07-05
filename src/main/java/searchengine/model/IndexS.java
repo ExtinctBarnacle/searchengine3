@@ -25,10 +25,13 @@ public class IndexS {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     int id;
-    @Column(name = "page_id")
+    //@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "page_id", referencedColumnName = "id")
     int pageId;
-    @Column(name = "lemma_id")
+    //@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lemma_id", referencedColumnName = "id")
     int lemmaId;
+    @Column(nullable = false, name = "ranks")
     float rankS;
 
     public int getId() {

@@ -10,4 +10,5 @@ import java.util.List;
 //@Configuration
 public interface SiteRepository extends CrudRepository<Site, Integer> {
     List<Site> findByUrl (String url);
+    List<Site> findById (int id);
 }
